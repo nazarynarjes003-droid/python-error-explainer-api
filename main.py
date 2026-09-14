@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from typing import Optional
 from fastapi.responses import JSONResponse
+from datetime import datetime
 
 import error_analysis
 import AST_processing
@@ -33,9 +34,21 @@ class ErrorRequest(BaseModel):
     error : Optional[str] = None
 
 
+class FeedbackRequest(BaseModel):
+    message: str
+
+
 @app.get("/")
 def get_endpoint():
     return "Python Error Explainer API is running"
+
+
+@app.post("/feedback")
+def receive_feedback(request: FeedbackRequest):
+    with open("feedback.txt", "a", encoding="utf-8") as f:
+        f.write(f"[{datetime.now()}] {request.message}\n")
+    return {"status": "دریافت شد"}
+
 
 @app.post("/analyze")
 def analyze_error_endpoint(request : ErrorRequest):
