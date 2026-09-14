@@ -50,6 +50,16 @@ def receive_feedback(request: FeedbackRequest):
     return {"status": "دریافت شد"}
 
 
+@app.get("/feedback")
+def get_feedback():
+    try:
+        with open("feedback.txt", "r", encoding="utf-8") as f:
+            content = f.read()
+    except FileNotFoundError:
+        content = "هنوز فیدبکی ثبت نشده."
+    return content
+
+
 @app.post("/analyze")
 def analyze_error_endpoint(request : ErrorRequest):
 
