@@ -121,11 +121,9 @@ def analyze_error_endpoint(request : ErrorRequest):
 
     elif code_analysis is not None and len(code_analysis.get("suspicious",[])) == 0:
 
-        supported_list = ", ".join(error_analysis.SUPPORTED_ERRORS.keys())
-
         error_info = {
             "error_type": None,
-            "message": f"کد بررسی شد و هیچ خطای مشکوکی از نوع TypeError در آن شناسایی نشد. اگر کد شما نوع دیگری از خطا تولید می‌کند، لطفاً آن را در فیلد 'error' مشخص کنید. انواع پشتیبانی‌شده: {supported_list}",
+            "message": "کد بررسی شد و هیچ خطای مشکوکی از نوع TypeError در آن شناسایی نشد. اگر کد شما نوع دیگری از خطا تولید می‌کند، لطفاً آن را در فیلد 'error' مشخص کنید.",
             "supported": False
         }
 
