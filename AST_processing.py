@@ -153,7 +153,7 @@ def analyze_comprisons(tree):
 
         if isinstance(node, ast.Compare):
 
-            for operator in node.op:
+            for operator in node.ops:
 
                 if isinstance(operator, ast.Gt):
                     comprison = "GreaterThan"
