@@ -6,8 +6,8 @@ import json
 load_dotenv()
 
 client = OpenAI(
-    api_key = os.getenv("GROQ_API_KEY"),
-    base_url = "https://api.groq.com/openai/v1"
+    api_key = os.getenv("OPENROUTER_API_KEY"),
+    base_url = "https://openrouter.ai/api/v1"
 )
 
 
@@ -56,7 +56,7 @@ def explain_error(error_result, code_result, raw_code = None):
     prompt = build_prompt(error_result, code_result, raw_code)
 
     response = client.chat.completions.create(
-        model="openai/gpt-oss-20b",
+        model="openrouter/free",
         messages=[{"role": "user", "content": prompt}]        
     )
 
