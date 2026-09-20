@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from typing import Optional
 from fastapi.responses import JSONResponse
 from datetime import datetime
+import textwrap
 
 import error_analysis
 import AST_processing
@@ -63,12 +64,14 @@ def get_feedback():
 @app.post("/analyze")
 def analyze_error_endpoint(request : ErrorRequest):
 
+    clean_code = textwrap.dedent(request.code)
+
     try:
-        tree = AST_processing.parse_code(request.code)
+        tree = AST_processing.parse_code(clean_code)
 
         if len(tree.body) == 0:
             return {
-                "code": request.code,
+                "code": clean_code,
                 "error_type": None,
                 "message": "کد ورودی هیچ دستور قابل اجرایی ندارد (احتمالاً کاملاً کامنت شده یا خالی است).",
                 "supported": False,
@@ -78,7 +81,7 @@ def analyze_error_endpoint(request : ErrorRequest):
                 "llm_explanation": None
             }
 
-        code_analysis = AST_processing.analyze_code(request.code)
+        code_analysis = AST_processing.analyze_code(clean_code)
         analysis_error_message = None
 
     except SyntaxError as e:
@@ -89,14 +92,14 @@ def analyze_error_endpoint(request : ErrorRequest):
         error_info["message"] = analysis_error_message
 
         try:
-            llm_explanation = LLM.explain_error(error_info, {"suspicious": []}, raw_code=request.code)
+            llm_explanation = LLM.explain_error(error_info, {"suspicious": []}, raw_code=clean_code)
 
         except Exception as ex:
             print("خطای واقعی:", repr(ex))
             llm_explanation = "در حال حاضر امکان دریافت توضیح از هوش مصنوعی وجود ندارد. "
 
         return {
-            "code": request.code,
+            "code": clean_code,
             "error_type": error_info["error_type"],
             "message": error_info["message"],
             "supported": error_info["supported"],
@@ -139,7 +142,7 @@ def analyze_error_endpoint(request : ErrorRequest):
     if code_analysis is not None and error_info["error_type"] is not None and error_info["supported"]:
 
         try:
-            llm_explanation = LLM.explain_error(error_info, code_analysis, raw_code = request.code)
+            llm_explanation = LLM.explain_error(error_info, code_analysis, raw_code = clean_code)
 
         except Exception as e:
             print("خطای واقعی:", repr(e))
@@ -151,7 +154,7 @@ def analyze_error_endpoint(request : ErrorRequest):
 
 
     return{
-        "code" : request.code,
+        "code" : clean_code,
         "error_type" : error_info["error_type"],
         "message": error_info["message"],
         "supported" : error_info["supported"],
