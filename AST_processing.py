@@ -316,6 +316,9 @@ def analyze_attributes(tree):
 
         if isinstance(node, ast.Attribute):
 
+            if isinstance(node.value, ast.Name) and node.value.id == "self":
+                continue
+
             attributes.append({
                 "object": ast.unparse(node.value),
                 "attribute": node.attr
