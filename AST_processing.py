@@ -439,6 +439,51 @@ def analyze_try_except(tree):
 
     return try_blocks
 
+
+def analyze_file_operations(tree):
+
+    file_operations = []
+
+    for node in ast.walk(tree):
+
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "open":
+
+            arguments = node.args
+            filename = "Unknown"
+            mode = "r"
+
+            if len(arguments) >= 1:
+                filename = ast.unparse(arguments[0])
+
+            if len(arguments) >= 2:
+                mode = ast.unparse(arguments[1])
+
+            for keyword in node.keywords:
+
+                if keyword.arg == "mode":
+                    mode = ast.unparse(keyword.value)
+
+            is_inside_with = False
+
+            for parent in ast.walk(tree):
+
+                if isinstance(parent, ast.With):
+
+                    for item in parent.items:
+
+                        if item.context_expr is node:
+                            is_inside_with = True
+
+            file_operations.append({
+                "filename": filename,
+                "mode": mode,
+                "used_with_statement": is_inside_with
+            })
+
+    return file_operations
+
+
+
 def find_suspicious_patterns(tree, variables):
 
     suspicious = []
@@ -489,6 +534,7 @@ def analyze_code(code):
         "classes": analyze_classes(tree),
         "imports": analyze_import(tree),
         "try_except": analyze_try_except(tree),
+        "file_operations": analyze_file_operations(tree),
         "suspicious": find_suspicious_patterns(
             tree,
             variables
