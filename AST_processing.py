@@ -376,7 +376,68 @@ def analyze_classes(tree):
             })
 
     return classes
-        
+
+
+def analyze_import(tree):
+
+    imports  = []
+
+    for node in ast.walk(tree):
+
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+
+                imports.append({
+                    "type": "Import",
+                    "module": alias.name,
+                    "alias": alias.asname
+                })
+
+        elif isinstance(node, ast.ImportFrom):
+
+            for alias in node.names:
+
+                imports.append({
+                    "type": "ImportFrom",
+                    "module": node.module,
+                    "name": alias.name,
+                    "alias": alias.asname
+                })
+
+    return imports
+
+
+
+def analyze_try_except(tree):
+
+    try_blocks = []
+
+    for node in ast.walk(tree):
+
+        if isinstance(node, ast.Try):
+
+            handlers = []
+
+            for handler in node.handlers:
+
+                if handler.type is not None:
+                    exception_type = ast.unparse(handler.type)
+
+                else:
+                    exception_type = "Exception"
+
+                handlers.append({
+                    "exception_type": exception_type,
+                    "name": handler.name                    
+                })
+
+            try_blocks.append({
+                "handlers": handlers,
+                "has_else": len(node.orelse) > 0,
+                "has_finally": len(node.finalbody) > 0                
+            })
+
+    return try_blocks
 
 def find_suspicious_patterns(tree, variables):
 
@@ -426,6 +487,8 @@ def analyze_code(code):
         "subscripts": analyze_subscripts(tree),
         "attributes": analyze_attributes(tree),
         "classes": analyze_classes(tree),
+        "imports": analyze_import(tree),
+        "try_except": analyze_try_except(tree),
         "suspicious": find_suspicious_patterns(
             tree,
             variables
