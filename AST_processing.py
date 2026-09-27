@@ -225,7 +225,7 @@ def analyze_functions(tree):
 
     functions = []
 
-    for node in ast.walk(tree):
+    for node in tree.body:
 
         if isinstance(node, ast.FunctionDef):
 
@@ -323,6 +323,57 @@ def analyze_attributes(tree):
 
     return attributes
 
+def analyze_classes(tree):
+    classes = []
+
+    for node in ast.walk(tree):
+
+        if isinstance(node, ast.ClassDef):
+
+            bases = []
+
+            for base in node.bases:
+                bases.append(ast.unparse(base))
+
+            methods = []
+            attributes = []
+
+            for item in node.body:
+
+                if isinstance(item, ast.FunctionDef):
+
+                    arguments = []
+
+                    for argument in item.args.args:
+                        arguments.append(argument.arg)
+
+                    methods.append({
+                        "name" : item.name,
+                        "arguments" : arguments
+                    })
+
+                    for sub_node in ast.walk(item):
+
+                        if isinstance(sub_node, ast.Assign):
+
+                            for target in sub_node.targets:
+
+                                if isinstance(target,ast.Attribute) and isinstance(target.value, ast.Name) and target.value.id == "self":
+
+                                    attributes.append({
+                                        "name" : target.attr,
+                                        "value": ast.unparse(sub_node.value)
+                                    })
+
+            classes.append({
+                "name" : node.name,
+                "bases": bases,
+                "methods" : methods,
+                "attributes": attributes
+            })
+
+    return classes
+        
 
 def find_suspicious_patterns(tree, variables):
 
@@ -371,6 +422,7 @@ def analyze_code(code):
         "calls": analyze_calls(tree),
         "subscripts": analyze_subscripts(tree),
         "attributes": analyze_attributes(tree),
+        "classes": analyze_classes(tree),
         "suspicious": find_suspicious_patterns(
             tree,
             variables
