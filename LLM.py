@@ -78,3 +78,52 @@ def explain_error(error_result, code_result, raw_code = None):
         }
 
     return structured_result
+
+
+
+def build_output_prompt(output_text):
+    prompt = f"""تو یک مربی برنامه‌نویسی هستی و با یک دانشجوی مبتدی صحبت می‌کنی. متن زیر خروجی ترمینال اوست. آن را ساده و روان توضیح بده: چه اتفاقی افتاده، چرا، و چطور درستش کند.
+
+فقط و فقط یک آبجکت JSON با دقیقاً این ساختار برگردان، بدون هیچ متن اضافه، بدون توضیح قبل یا بعد از آن، بدون ```json و بدون بک‌تیک. مقادیر تمام فیلدها باید کاملاً به زبان فارسی نوشته شوند، حتی اگر خروجی ترمینال به انگلیسی باشد. در فیلد solution از فرمت مارک‌داون استفاده نکن و اگر نیاز به نمایش دستور یا کد بود، آن را به‌صورت متن ساده بنویس:
+
+{{
+  "error_type": "عنوان کوتاه مشکل (اگر خطایی نبود بنویس: بدون خطا)",
+  "explanation": "توضیح ساده و روان از آنچه در خروجی رخ داده",
+  "possible_causes": ["دلیل احتمالی اول", "دلیل احتمالی دوم"],
+  "solution": "راهکار مشخص برای رفع مشکل"
+}}
+
+خروجی ترمینال:
+{output_text}
+"""
+    return prompt
+
+
+
+def explain_output(output_text):
+
+    prompt = build_output_prompt(output_text)
+
+    response = client.chat.completions.create(
+        model="openrouter/free",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    raw_content = response.choices[0].message.content.strip()
+
+    if raw_content.startswith("```"):
+        raw_content = raw_content.strip("`")
+        raw_content = raw_content.replace("json", "", 1).strip()
+
+    try:
+        structured_result = json.loads(raw_content)
+
+    except json.JSONDecodeError:
+        structured_result = {
+            "error_type": "نامشخص",
+            "explanation": "پاسخ دریافتی از هوش مصنوعی قابل تبدیل به فرمت استاندارد نبود.",
+            "possible_causes": [],
+            "solution": "لطفاً دوباره تلاش کنید."
+        }
+
+    return structured_result

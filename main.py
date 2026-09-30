@@ -20,6 +20,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+MAX_OUTPUT_CHARS = 3000
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
 
@@ -37,6 +39,10 @@ class ErrorRequest(BaseModel):
 
 class FeedbackRequest(BaseModel):
     message: str
+
+
+class OutputRequest(BaseModel):
+    output: str
 
 
 @app.get("/")
@@ -59,6 +65,38 @@ def get_feedback():
     except FileNotFoundError:
         content = "هنوز فیدبکی ثبت نشده."
     return content
+
+
+@app.post("/explain-output")
+def explain_output_endpoint(request: OutputRequest):
+
+    output_text = request.output.strip()
+
+    if not output_text:
+        return {
+            "truncated": False,
+            "message": "متنی برای توضیح دادن ارسال نشد.",
+            "llm_explanation": None
+        }
+
+    truncated = False
+
+    if len(output_text) > MAX_OUTPUT_CHARS:
+        output_text = output_text[-MAX_OUTPUT_CHARS:]
+        truncated = True
+
+    try:
+        llm_explanation = LLM.explain_output(output_text)
+
+    except Exception as e:
+        print("خطای واقعی:", repr(e))
+        llm_explanation = "در حال حاضر امکان دریافت توضیح از هوش مصنوعی وجود ندارد. "
+
+    return {
+        "truncated": truncated,
+        "message": None,
+        "llm_explanation": llm_explanation
+    }
 
 
 @app.post("/analyze")
